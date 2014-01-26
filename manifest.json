@@ -1,0 +1,19 @@
+{
+  "name": "Anti phish Solution",
+  "version": "1.0",
+  "description": "Shows Phishing in the URL when it is negative to white list and heuristic test.",
+  "background": { "scripts": ["background.js"] },
+  "page_action" :
+  {
+    "default_icon" : "icon-19.png",
+    "default_title" : "There's a 'G' in this URL!"
+  },
+  "permissions" : [
+    "tabs"
+  ],
+  "icons" : {
+    "48" : "icon-48.png",
+    "128" : "icon-128.png"
+  },
+  "manifest_version": 2
+}
