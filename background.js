@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-var whiteList = ["google","nibl","facebook","esewa","gmail", "nepalpolice", "hotmail"];
+var whiteList = ["google.com","google.com.np","nibl.com.np","facebook","esewa.com.np","gmail.com", "nepalpolice.gov.np", "hotmail.com", "live.com"];
 
 var popupWindow=null;
 
@@ -58,15 +58,16 @@ function checkForValidUrl(tabId, changeInfo, tab) {
   // parent_disable();
   //child_open();
   	// checking whitelist
-  var hostname = getDomainName(tab);
-  if(hostname != "Error")
+  var domainName = getDomainName(tab);
+  if(domainName != "Error")
   {
-	  if(checkWhiteList(hostname))
+	  if(checkWhiteList(domainName))
 	  {
 		 return true;
 		}
 	}
-	
+var hostName = getHostName(tab);
+
   
   var displayText="HTTPS : "
   var httpsVal= "";
@@ -85,14 +86,27 @@ function checkForValidUrl(tabId, changeInfo, tab) {
 	//myWindow.document.write("<p>This is 'myWindow'</p>")
 	//myWindow.focus()
 	
-	displayText = displayText.concat("Search Google:").concat(hostname);
+	displayText = displayText.concat("Search Google:").concat(hostName);
 	  
- 	alert('<pre>'+displayText+'</pre>');
+ 	alert(displayText);
 	
     chrome.pageAction.show(tabId);
 	
 };
 
+function IsPortNo(domainName)
+{
+	var portNo = domainName.split(":");
+	if(portNo.length > 0)
+	{
+		if(parseFloat(portNo[portNo.length - 1]).toString() == portNo[portNo.length - 1])
+		{
+			return true;	
+		}
+		return false;							
+	}
+	return false;
+}
 
 
 function IsIPAddress(domainName)
@@ -109,7 +123,64 @@ function IsIPAddress(domainName)
 	}
 	return false;
 }
-
+function getHostName(tab)
+{
+	
+	var withurl=tab.url.split("/");
+	var domainName = new Array();
+	if(withurl.length > 2)
+	{
+		domainName = withurl[2];
+	}
+	else
+	{
+		return "Error";
+	}
+	
+	if(IsIPAddress(domainName))
+	{
+		return domainName;	
+	}
+	 if(IsPortNo(domainName))
+	{
+		var beforePort=domainName.split(":");
+		if(beforePort.length < 2)
+		{
+			return "Error";				
+		}
+		var subdomains=beforePort[beforePort.length - 2].split(".");
+		if(subdomains.length >= 2)
+		{
+			if(subdomains[subdomains.length - 1].length == 2)
+			{
+				return subdomains[subdomains.length -3];
+			}
+			else
+			{
+				return subdomains[subdomains.length -2];
+			}
+		}
+	}
+	else
+	{		
+		var subdomains=domainName.split(".");
+		if(subdomains.length >= 2)
+		{
+			if(subdomains[subdomains.length - 1].length == 2)
+			{
+				return subdomains[subdomains.length -3];
+			}
+			else
+			{
+				return subdomains[subdomains.length -2];
+			}
+		}
+		else
+		{
+			return "Error";	
+		}			
+	}	
+}
 
 function getDomainName(tab)
 {
@@ -131,6 +202,8 @@ function getDomainName(tab)
 	}
 	else
 	{		
+		// returning upto along with tld
+		return domainName;
 		var subdomains=domainName.split(".");
 		if(subdomains.length >= 2)
 		{
@@ -147,8 +220,7 @@ function getDomainName(tab)
 		{
 			return "Error";	
 		}			
-	}
-	
+	}	
 }
 
 // checking HTTPS
