@@ -2,13 +2,44 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+
+
+var errorStr = "Error";
+var doubleSlash = "//";
+var PhishingMsg = '                  The website you are opening is suspicious. \nPlease do not provide any confidential information to the website.\n';
+var DetailsMsg = '\n \n\n Click OK for details.';
+var HttpMsg = 'The website asks for confidential information but it does not use encryption during data transmission. This makes your information unsecure.\n';
+var TLDMsg = 'The website uses multiple top level domain (e.g., .com.np).\n';
+var PortNoMsg = 'The website uses port other than 80 which is not recommended for website hosting. \n';
+var IPAddressMsg = 'The website uses IP address (e.g., 192.183.24.23) which is not recommended for website hosting.\n';
+var IPAddressMsg2 = ') which is not recommended for website hosting.';
+var URLLengthMsg = ' The website uses suspiciously lengthy URL.\n';
+var ATMarkMsg = 'The website will suspiciously redirect to other site.\n';
+var doubleSlashMsg = 'The website may suspiciously redirect to other site.\n';
+var wordBasedMsg = 'The website url has sensitive words\n';
+var BagOfWords = ["/","?",".","=","-","_"];
+
+// 
+var wordBased = ["webscr", "ebayisapi", "secure", "account", "login", "signin", "banking", "confirm"];
+//var DoubleSlashMsg = '\nThe website has multile \\\\';
+
+var URLLengthStd = 67;
+var TLDdots = 4; // letimate website is less than 5
+var ATMark = "@";
+
+
+/*var tldCountries = [".edu", ".gov", ".mil", ".ac", ".ad", ".np", ".in", ".uk"];
+var tlds = [".aero",".asia",".bike",".biz",".camera",".cat",".clothing",".com",".coop",".equipment",".estate",".eus",".gallery",".graphics",".guru",".info",".int",".holdings",".jobs",".lighting",".mobi",".museum",".name",".net",".org",".photography",".plumbing",".post",".pro",".singles",".tel",".travel",".ventures",".xxx"];*/
+
 var whiteList = ["google.com","google.com.np","nibl.com.np","facebook","esewa.com.np","gmail.com", "nepalpolice.gov.np", "hotmail.com", "live.com"];
+var tldCountries = ["edu", "gov", "mil", "ac", "ad", "np", "in", "uk", "jp"];
+var tlds = ["aero","asia","bike","biz","camera","cat","clothing","com","coop","equipment","estate","eus","gallery","graphics","guru","info","int","holdings","jobs","lighting","mobi","museum","name","net","org","photography","plumbing","post","pro","singles","tel","travel","ventures","xxx"];
 
 var popupWindow=null;
 
 function checkURLLength(tab)
 {
-	return size = tab.url.length();
+	return URLLengthStd < tab.url.length;	
 }
 
 function checkWhiteList(hostname)
@@ -21,77 +52,132 @@ function checkWhiteList(hostname)
 	return false;
 }
 
-function get_top_domain(){
-  var i,h,
-    weird_cookie='weird_get_top_level_domain=cookie',
-    hostname = document.location.hostname.split('.');
-  for(i=hostname.length-1; i>=0; i--) {
-    h = hostname.slice(i).join('.');
-    document.cookie = weird_cookie + ';domain=.' + h + ';';
-    if(document.cookie.indexOf(weird_cookie)>-1){
-      document.cookie = weird_cookie.split('=')[0] + '=;domain=.' + h + ';expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      return h;
-    }
-  }
-}
-
-
-
-function get_top_domain(){
-  var i,h,
-    weird_cookie='weird_get_top_level_domain=cookie',
-    hostname = document.location.hostname.split('.');
-  for(i=hostname.length-1; i>=0; i--) {
-    h = hostname.slice(i).join('.');
-    document.cookie = weird_cookie + ';domain=.' + h + ';';
-    if(document.cookie.indexOf(weird_cookie)>-1){
-      document.cookie = weird_cookie.split('=')[0] + '=;domain=.' + h + ';expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      return h;
-    }
-  }
-}
-
 // Called when the url of a tab changes.
-function checkForValidUrl(tabId, changeInfo, tab) {
-  // If the letter 'g' is found in the tab's URL...
-  //openPopupWindow();
-  // parent_disable();
-  //child_open();
-  	// checking whitelist
-  var domainName = getDomainName(tab);
-  if(domainName != "Error")
-  {
-	  if(checkWhiteList(domainName))
-	  {
-		 return true;
+function checkForValidUrl(tabId, changeInfo, tab) 
+{ 
+		
+		var detectionCount = 0;
+		var EducativeMsg= "";
+		var domainName = getDomainName(tab);
+		
+		if(domainName == errorStr)
+		 {
+			return false; 
+		 }
+		
+		 // Checking White list
+		 if(checkWhiteList(domainName))
+		 {
+			 return true;
+		 }
+		 		
+		// Check HTTP Msg
+		if(checkingHttps(tab))
+		{
+			return true;
 		}
-	}
-var hostName = getHostName(tab);
-
-  
-  var displayText="HTTPS : "
-  var httpsVal= "";
-	  if(checkingHttps(tab))
-	  {
-		return true;
-	  }
-	else
-	{
-		httpsVal = "False";
-	}
-	//alert('<pre>'+displayText+'</pre>');
- 	 displayText = displayText.concat(httpsVal);
-	 
- 	//var myWindow=window.open('popup.html','Search Window','width=200,height=100')
-	//myWindow.document.write("<p>This is 'myWindow'</p>")
-	//myWindow.focus()
+		var hostName = getHostName(domainName);
+		var countMsg = "";
+		if(hostName != errorStr)
+		{
+			detectionCount++;
+			countMsg = detectionCount+'. ';
+			EducativeMsg = EducativeMsg.concat(countMsg);
+			EducativeMsg = EducativeMsg.concat(HttpMsg);			
+		}
+		
+		//var mtlds = checkMultipleTldsdots(domainName);
+		
+		// Check multiple TLDs
+		if(checkMultipleTlds(domainName))
+		{
+			detectionCount++;
+			countMsg = detectionCount + '. ';
+			EducativeMsg = EducativeMsg.concat(countMsg);
+			EducativeMsg = EducativeMsg.concat(TLDMsg);
+		}
+		 
+		//DoubleSlashMsg
+		//var doubleSlashes = checkDoubleSlashes(tab);
+		//if(doubleSlashes > 1)
+		//{
+		//	EducativeMsg = EducativeMsg.concat(DoubleSlashMsg);
+		//	detectionCount++;
+		//}
+		 
+		 
+		// Check URL Length
+		if(checkURLLength(tab))
+		{
+			detectionCount++;
+			countMsg = detectionCount+'. ';
+			EducativeMsg = EducativeMsg.concat(countMsg);
+			EducativeMsg = EducativeMsg.concat(URLLengthMsg);
+		}
+		
+		//Is Port No
+		if(IsPortNo(domainName) != -1)
+		{
+			detectionCount++;
+			countMsg = detectionCount+'. ';
+			EducativeMsg = EducativeMsg.concat(countMsg);
+			EducativeMsg = EducativeMsg.concat(PortNoMsg);
+		}
+				
+		//IPAddressMsg
+		if(IsIPAddress(domainName))
+		{
+			detectionCount++;
+			countMsg = detectionCount+'. ';
+			EducativeMsg = EducativeMsg.concat(countMsg);
+			EducativeMsg = EducativeMsg.concat(IPAddressMsg);
+		}
+			
+		if(checkATMark(tab))
+		{
+			detectionCount++;
+			countMsg = detectionCount+'. ';
+			EducativeMsg = EducativeMsg.concat(countMsg);
+			EducativeMsg = EducativeMsg.concat(ATMarkMsg);
+		}
+		
+		if (checkDoubleSlash(tab))
+		{
+			detectionCount++;
+			countMsg = detectionCount+'. ';
+			EducativeMsg = EducativeMsg.concat(countMsg);
+			EducativeMsg = EducativeMsg.concat(doubleSlashMsg);
+		}
+		
+		if(checkwordBased(tab))
+		{
+			detectionCount++;
+			countMsg = detectionCount+'. ';
+			EducativeMsg = EducativeMsg.concat(countMsg);
+			EducativeMsg = EducativeMsg.concat(wordBasedMsg);
+		}
+			//alert
+		if(detectionCount > 0)
+		{
+			var answer = confirm(PhishingMsg+DetailsMsg);
+			if(answer)
+			{
+				var allMsg = PhishingMsg.concat(EducativeMsg);
+				alert (allMsg);	
+			}
+		}
 	
-	displayText = displayText.concat("Search Google:").concat(hostName);
-	  
- 	alert(displayText);
 	
-    chrome.pageAction.show(tabId);
-	
+		var googleSearch = 'https://www.google.com.np/?gws_rd=cr&ei=irLzUsVmye2IB5LHgagF#q=' + hostName;
+		if (tab.url.indexOf('google') > -1 || hostName == "Error")
+		{
+		 	chrome.pageAction.show(tabId);
+		}
+		else
+		{
+			//window.open(googleSearch, '_blank');
+		}	
+		chrome.pageAction.show(tabId);	
 };
 
 function IsPortNo(domainName)
@@ -101,11 +187,11 @@ function IsPortNo(domainName)
 	{
 		if(parseFloat(portNo[portNo.length - 1]).toString() == portNo[portNo.length - 1])
 		{
-			return true;	
+			return portNo[portNo.length - 1];	
 		}
-		return false;							
+		return -1;							
 	}
-	return false;
+	return -1;
 }
 
 
@@ -118,35 +204,23 @@ function IsIPAddress(domainName)
 		{
 			return true;	
 		}
-		return false;
-							
+		return false;							
 	}
 	return false;
 }
-function getHostName(tab)
+function getHostName(domainName)
 {
-	
-	var withurl=tab.url.split("/");
-	var domainName = new Array();
-	if(withurl.length > 2)
-	{
-		domainName = withurl[2];
-	}
-	else
-	{
-		return "Error";
-	}
 	
 	if(IsIPAddress(domainName))
 	{
 		return domainName;	
 	}
-	 if(IsPortNo(domainName))
+	 if(IsPortNo(domainName) != -1)
 	{
 		var beforePort=domainName.split(":");
 		if(beforePort.length < 2)
 		{
-			return "Error";				
+			return errorStr;				
 		}
 		var subdomains=beforePort[beforePort.length - 2].split(".");
 		if(subdomains.length >= 2)
@@ -162,7 +236,7 @@ function getHostName(tab)
 		}
 	}
 	else
-	{		
+	{
 		var subdomains=domainName.split(".");
 		if(subdomains.length >= 2)
 		{
@@ -177,7 +251,7 @@ function getHostName(tab)
 		}
 		else
 		{
-			return "Error";	
+			return errorStr;	
 		}			
 	}	
 }
@@ -223,47 +297,104 @@ function getDomainName(tab)
 	}	
 }
 
+// At Mark Check
+function checkATMark(tab)
+{
+	if(tab.url.indexOf(ATMark) > -1)
+	{
+		return true;
+	}
+	return false;
+}
+
 // checking HTTPS
 function checkingHttps(tab)
 {
-	//alert('checking HTPPS');
-	
+	//alert('checking HTPPS'); http://www.nagariknews.com/
 	var withurl=tab.url.split("/");
-	if(withurl.length > 3)
+	if(withurl.length < 3)
 	{
-		if((withurl[0].indexOf('https')) > -1)
-		{
-			return true;	
-		}
-		else
-		{
-			//alert(withurl[2].indexOf('https'));
-			return false;	
-		}
-	}	
-	
+		return false;
+	}
+	if((withurl[0].indexOf('https')) > -1)
+	{
+		return true;	
+	}
 	return false;	
 }
 
-function openPopupWindow()
+function checkTokens(tokens)
 {
-	// window.open('popup.html','Search in Google','width=700,height=500,toolbar=1,menubar=1,location=1,status=1,scrollbars=1,resizable=1,left=0,top=0',1);
- //window.open('popup.html','1383231532704','width=700,height=500,toolbar=1,menubar=1,location=1,status=1,scrollbars=1,resizable=1,left=0,top=0');
-  //popupWindow = window.open('child_page.html','name','width=200,height=200');
-   // popupWindow.focus();
- return true;
+	for (var i = 0; i < tokens.length; i++)
+	{
+		if(wordBased.indexOf(tokens[i]) > -1)
+		{
+			return true;	
+		}
+	}
+	return false;
+}
+function checkwordBased(tab)
+{
+	for (var i = 0; i < BagOfWords.length; i++)
+	{
+		
+		var tokens = tab.url.split(BagOfWords[i]);
+		if (checkTokens(tokens))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+function checkMultipleTlds(domainName)
+{
+	
+	var dotsNo=domainName.split(".").length-1;
+	//alert(withurl);
+	if(dotsNo > TLDdots )
+	{
+		return true;	
+	}
+	
+	return false;
 }
 
 
-
-function popup()
+function checkDoubleSlash(tab)
 {
-    popupWindow = window.open('popup.html','name','width=200,height=200');
+	var totalDoubleSlash = tab.url.split(doubleSlash);
+	//alert (afterDot);
+	if(totalDoubleSlash.length > 2)
+	{
+		return true;
+	}
+	return false;	
 }
 
-function parent_disable() {
-if(popupWindow && !popupWindow.closed)
-popupWindow.focus();
+//doubleSlash
+function checkDoubleSlashes()
+{
+	var withurl=tab.url.split("/");
+	//alert(withurl);
+	var slashCounter = 0;
+	for(var i =0; i< withurl.length; i++)
+	{
+		if(withurl[i].length < 2)
+		{
+			continue;
+		}
+		if(checkDoubleSlash(withurl[i]))
+		{
+			slashCounter += 1;
+		}
+	}
+	if(tldCounter > 0)
+	{
+		return slashCounter;
+	}
+	return -1;		
 }
 
 // Listen for any changes to the URL of any tab.
