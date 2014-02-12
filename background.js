@@ -6,16 +6,16 @@
 
 var errorStr = "Error";
 var doubleSlash = "//";
-var PhishingMsg = '                  The website you are opening is suspicious. \nPlease do not provide any confidential information to the website.\n';
+var PhishingMsg = 'The website you are opening is suspicious. \nPlease do not provide any confidential information to the website.\n\n \n\n';
 var DetailsMsg = '\n \n\n Click OK for details.';
-var HttpMsg = 'The website asks for confidential information but it does not use encryption during data transmission. This makes your information unsecure.\n';
-var TLDMsg = 'The website uses multiple top level domain (e.g., .com.np).\n';
-var PortNoMsg = 'The website uses port other than 80 which is not recommended for website hosting. \n';
-var IPAddressMsg = 'The website uses IP address (e.g., 192.183.24.23) which is not recommended for website hosting.\n';
-var IPAddressMsg2 = ') which is not recommended for website hosting.';
-var URLLengthMsg = ' The website uses suspiciously lengthy URL.\n';
-var ATMarkMsg = 'The website will suspiciously redirect to other site.\n';
-var doubleSlashMsg = 'The website may suspiciously redirect to other site.\n';
+var HttpMsg = 'The website asks for confidential information but it does not use encryption during data transmission. This makes your information unsecure.\n\n';
+var TLDMsg = 'The website uses multiple top level domain (e.g., .com.np).\n\n';
+var PortNoMsg = 'The website uses port other than 80 which is not recommended for website hosting. \n\n';
+var IPAddressMsg = 'The website uses IP address (e.g.,';// 192.183.24.23) which is not recommended for website hosting.\n';
+var IPAddressMsg2 = ') which is not recommended for website hosting.\n\n';
+var URLLengthMsg = ' The website uses suspiciously lengthy URL.\n\n';
+var ATMarkMsg = 'The website will suspiciously redirect to other site.\n\n';
+var doubleSlashMsg = 'The website may suspiciously redirect to other site.\n\n';
 var wordBasedMsg = 'The website url has sensitive words\n';
 var BagOfWords = ["/","?",".","=","-","_"];
 
@@ -23,7 +23,7 @@ var BagOfWords = ["/","?",".","=","-","_"];
 var wordBased = ["webscr", "ebayisapi", "secure", "account", "login", "signin", "banking", "confirm"];
 //var DoubleSlashMsg = '\nThe website has multile \\\\';
 
-var URLLengthStd = 67;
+var URLLengthStd = 67; // PhishTank has 67 peak characters @report
 var TLDdots = 4; // letimate website is less than 5
 var ATMark = "@";
 
@@ -31,9 +31,10 @@ var ATMark = "@";
 /*var tldCountries = [".edu", ".gov", ".mil", ".ac", ".ad", ".np", ".in", ".uk"];
 var tlds = [".aero",".asia",".bike",".biz",".camera",".cat",".clothing",".com",".coop",".equipment",".estate",".eus",".gallery",".graphics",".guru",".info",".int",".holdings",".jobs",".lighting",".mobi",".museum",".name",".net",".org",".photography",".plumbing",".post",".pro",".singles",".tel",".travel",".ventures",".xxx"];*/
 
-var whiteList = ["google.com","google.com.np","nibl.com.np","facebook","esewa.com.np","gmail.com", "nepalpolice.gov.np", "hotmail.com", "live.com"];
-var tldCountries = ["edu", "gov", "mil", "ac", "ad", "np", "in", "uk", "jp"];
-var tlds = ["aero","asia","bike","biz","camera","cat","clothing","com","coop","equipment","estate","eus","gallery","graphics","guru","info","int","holdings","jobs","lighting","mobi","museum","name","net","org","photography","plumbing","post","pro","singles","tel","travel","ventures","xxx"];
+var whiteList = ["google.com","google.com.np","nibl.com.np","facebook","esewa.com.np","gmail.com", "nepalpolice.gov.np", "hotmail.com", "live.com", "thehimilayantimes.com", "ekantipur.com", "nepalnews.com"];
+var tldCountries = ["ac", "ad", "np", "in", "uk", "jp"];
+var TLDs = ["edu","gov", "mil","aero","asia","bike","biz","camera","cat","clothing","com","coop","equipment","estate","eus","gallery","graphics","guru","info","int","holdings","jobs","lighting","mobi","museum","name","net","org","photography","plumbing","post","pro","singles","tel","travel","ventures","xxx"];
+var HTTPS = "https";
 
 var popupWindow=null;
 
@@ -51,11 +52,36 @@ function checkWhiteList(hostname)
 	}
 	return false;
 }
-
+function customAlert(msg) {
+var alertDiv = "<div style='position: fixed; top: 20px; left: 20px;'>"+msg+"</div>";
+document.getElementsByTagName('body')[0].appendChild(alertDiv);
+}
 // Called when the url of a tab changes.
 function checkForValidUrl(tabId, changeInfo, tab) 
 { 
-		
+	//var TEST = false;
+	//alert('test');
+	//customAlert("This is test");
+	
+	//chrome.showModalDialog("TEST");
+	//
+	
+	// For testing purpose
+	/*if(!TEST)
+	{
+		var native_alert = alert;
+	
+		alert = function(msg) {
+		console.log('call to alert() - message: '+msg);
+		native_alert(msg);    
+			}
+	
+		alert('intercepted!');
+	
+	
+		return ;	
+	} // end of test*/
+	
 		var detectionCount = 0;
 		var EducativeMsg= "";
 		var domainName = getDomainName(tab);
@@ -131,6 +157,9 @@ function checkForValidUrl(tabId, changeInfo, tab)
 			countMsg = detectionCount+'. ';
 			EducativeMsg = EducativeMsg.concat(countMsg);
 			EducativeMsg = EducativeMsg.concat(IPAddressMsg);
+			EducativeMsg = EducativeMsg.concat(domainName);
+			EducativeMsg = EducativeMsg.concat(IPAddressMsg2);
+			
 		}
 			
 		if(checkATMark(tab))
@@ -156,28 +185,29 @@ function checkForValidUrl(tabId, changeInfo, tab)
 			EducativeMsg = EducativeMsg.concat(countMsg);
 			EducativeMsg = EducativeMsg.concat(wordBasedMsg);
 		}
-			//alert
-		if(detectionCount > 0)
+		
+
+		//alert
+		if(detectionCount > 1)
 		{
-			var answer = confirm(PhishingMsg+DetailsMsg);
-			if(answer)
-			{
-				var allMsg = PhishingMsg.concat(EducativeMsg);
+			var displayMsg = PhishingMsg; //+DetailsMsg;
+			//var answer = confirm(displayMsg);
+			//if(answer)
+			//{
+				var allMsg = displayMsg.concat(EducativeMsg);
 				alert (allMsg);	
+			//}
+			var googleSearch = 'https://www.google.com.np/?gws_rd=cr&ei=irLzUsVmye2IB5LHgagF#q=' + hostName;
+			if (tab.url.indexOf('google') > -1 || hostName == "Error")
+			{
+				chrome.pageAction.show(tabId);
 			}
+			else
+			{
+				window.open(googleSearch, '_blank');
+			}	
+			chrome.pageAction.show(tabId);
 		}
-	
-	
-		var googleSearch = 'https://www.google.com.np/?gws_rd=cr&ei=irLzUsVmye2IB5LHgagF#q=' + hostName;
-		if (tab.url.indexOf('google') > -1 || hostName == "Error")
-		{
-		 	chrome.pageAction.show(tabId);
-		}
-		else
-		{
-			//window.open(googleSearch, '_blank');
-		}	
-		chrome.pageAction.show(tabId);	
 };
 
 function IsPortNo(domainName)
@@ -208,6 +238,19 @@ function IsIPAddress(domainName)
 	}
 	return false;
 }
+
+function checkWithTopTLDs(subDomain)
+{
+	if(TLDs.indexOf(subDomain) > -1)
+	{
+		//alert('i am inside subdomain true');
+		return true;
+	}
+	//alert('i am outside subdomain false');
+	return false;
+		
+}
+
 function getHostName(domainName)
 {
 	
@@ -229,10 +272,7 @@ function getHostName(domainName)
 			{
 				return subdomains[subdomains.length -3];
 			}
-			else
-			{
-				return subdomains[subdomains.length -2];
-			}
+			return subdomains[subdomains.length -2];
 		}
 	}
 	else
@@ -240,14 +280,11 @@ function getHostName(domainName)
 		var subdomains=domainName.split(".");
 		if(subdomains.length >= 2)
 		{
-			if(subdomains[subdomains.length - 1].length == 2)
+			if(subdomains[subdomains.length - 1].length == 2 && checkWithTopTLDs(subdomains[subdomains.length -2]))
 			{
 				return subdomains[subdomains.length -3];
 			}
-			else
-			{
-				return subdomains[subdomains.length -2];
-			}
+			return subdomains[subdomains.length -2];
 		}
 		else
 		{
@@ -285,10 +322,7 @@ function getDomainName(tab)
 			{
 				return subdomains[subdomains.length -3];
 			}
-			else
-			{
-				return subdomains[subdomains.length -2];
-			}
+			return subdomains[subdomains.length -2];
 		}
 		else
 		{
@@ -316,7 +350,7 @@ function checkingHttps(tab)
 	{
 		return false;
 	}
-	if((withurl[0].indexOf('https')) > -1)
+	if((withurl[0].indexOf(HTTPS)) > -1)
 	{
 		return true;	
 	}
@@ -357,7 +391,6 @@ function checkMultipleTlds(domainName)
 	{
 		return true;	
 	}
-	
 	return false;
 }
 
@@ -374,7 +407,7 @@ function checkDoubleSlash(tab)
 }
 
 //doubleSlash
-function checkDoubleSlashes()
+/*function checkDoubleSlashes()
 {
 	var withurl=tab.url.split("/");
 	//alert(withurl);
@@ -395,7 +428,7 @@ function checkDoubleSlashes()
 		return slashCounter;
 	}
 	return -1;		
-}
+}*/
 
 // Listen for any changes to the URL of any tab.
 chrome.tabs.onUpdated.addListener(checkForValidUrl);
